@@ -101,7 +101,10 @@ LABEL=arch      /mnt/defvol             btrfs           rw,relatime,compress=lzo
 
 ```
 最后一行 ，不知道什么意思 /mnt/defvol  是什么？
-
+如果挂载时不指定 subvol= 选项便会挂载默认子卷.要改变默认子卷:
+在安装了 GRUB 的系统上,在改变默认子卷以后不要忘记运行 grub-install .
+grub-install --target=i386-pc --recheck /dev/sda
+grub-mkconfig -o /boot/grub/grub.cfg
 
 ## Mkinitcpio ##
 In order to enable BTRFS on initramfs image, I added **btrfs** on HOOK inside **/etc/mkinitcpio.conf**. Then, it was necessary to execute **mkinitcpio -p linux** again. If you install linux-lts kernel (Long Term Support), you will have to execute **mkinitcpio -p linux-lts**
@@ -154,58 +157,6 @@ In this [folder](https://github.com/egara/arch-btrfs-installation/tree/master/fi
 ## Re-installing the system ##
 The previous way didn't work as I expected. Because of /boot partition is independent, if you want to rollback to a previous snapshot with a different kernel installed there is a problem. I don't snapshot /boot, so there it is always the images generated for the last kernel installed. This is a problem! So I reinstalled the whole system disabling UEFI mode and enabling legacy BIOS. Then, I partitioned the system using only thre partitions: sda1 for / (inlcuidng boot partition), sda2 for swap and sda3 for home. sda1 is BTRFS, but because of the whole root system is stored there, now when I snapshot this partition, /boot is included and there is no problem with different kernel installations. I used GRUB as a boot loader.
 
-## Optimus installation ##
-The laptop has two graphic cards: Integrated: Intel i915 and discrete NVIDIA GTX 960M. Then, it is interesting to have optimus technology enabled and working fine. This way, NVIDIA graphics card will only be used when a game is executed, saving power and extending battery life. These are the steps followed to have this technology working on this hardware (it was a little tricky). 
-
-**Note: There is a problem with bbswitch, power management and kernel 4.8 as you can see [here](https://wiki.archlinux.org/index.php/bumblebee#Broken_power_management_with_kernel_4.8). You can try the proposed solution or install linux-lts and linux-lts-headers instead of normal kernel, nvidia-lts and bbswitch-lts from repository and have a LTS system instead of cutting edge**
-
-- Install video graphic drivers: [Intel](https://wiki.archlinux.org/index.php/intel_graphics#Installation) including vulkan support and [bumblebee with NVIDIA](https://wiki.archlinux.org/index.php/bumblebee#Installing_Bumblebee_with_Intel.2FNVIDIA)
-- Install [primus and lib32-primus](https://wiki.archlinux.org/index.php/bumblebee#Primusrun)
-- Add a [kernel boot parameter in GRUB](https://wiki.archlinux.org/index.php/Kernel_parameters#GRUB) for [Skylake i915 GPU](https://wiki.archlinux.org/index.php/intel_graphics#Skylake_support) and remove **quiet** parameter in order to see all the details of the booting process and check that evrything is OK.
-- If you are using kernel 4.8 or higher, add this [kernel boot parameter in GRUB](https://wiki.archlinux.org/index.php/Kernel_parameters#GRUB) **pcie_port_pm=off** as you can see [here](https://wiki.archlinux.org/index.php/NVIDIA/Troubleshooting#Modprobe_Error:_.22Could_not_insert_.27nvidia.27:_No_such_device.22_on_linux_.3E.3D4.8) for avoiding error **"Could not insert 'nvidia': No such device"**
-- Add modules **intel_agp** and **i915** (intel_agp must go always before i915) as you can see [here](https://wiki.archlinux.org/index.php/intel_graphics#Blank_screen_during_boot.2C_when_.22Loading_modules.22) within [mkinitcpio.conf](https://wiki.archlinux.org/index.php/Kernel_mode_setting#Early_KMS_start) in order to enable KMS during the initramfs stage. This will avoid a black screen and will prevent the system to freeze. Rebuild initramfs using **mkinitcpio -p linux** or **mkinitcpio -p linux-lts** depending on the kernel you have installed.
-- Disable bumblebeed.service: **sudo systemctl disable bumblebeed.service**
-- Install bbswitch for graphic cards power management: **sudo pacman -S bbswitch**
-- I installed KDE, so I made a script in **/usr/bin/start-bumblebeed.sh**, gave it execute permissions and I start it every time I login in KDE placing in **System Settings -> Startup and Shutdown -> Add script** and configuring it at **Startup**. This is the content of the script:
-```
-#!/bin/bash
-systemctl start bumblebeed.service
-```
-- For launching Steam games and use NVIDIA graphics card, open Steam --> Library --> right click on the game you want to launnch --> Set Launch Options -> Type: **optirun -b primus %command%**
-- For launching wine games and use NVIDIA graphics card, launch the game with **env WINEPREFIX="/home/egarcia/.wine" /usr/bin/optirun -b primus wine C:\\windows\\command\\start.exe /Unix /home/egarcia/.wine/dosdevices/c:/users/Public/Escritorio/Hearthstone.lnk**. Another method is, for example to execute **Battle.net** with wine, execute de exe file using **optirun -b primus wine "C:\Program Files (x86)\Battle.net\Battle.net.exe"**
-
-## Bluetooth installation ##
-Normally, bluetooth chipset (intel/ibt-11-5.sfi) should work out of the box, but there is a problema loading **btusb** kernel module. In order to make it work, it is necessary to create a script in **/usr/bin** called **start-bluetooth.sh** with this content:
-
-```
-#!/bin/bash
-modprobe -r btusb
-modprobe btusb
-```
-
-++Tip:++ If you want, you can create a desktop launcher and locate it within **~/.local/share/applications** with this content:
-
-```
-[Desktop Entry]
-Comment[en_US]=
-Comment=
-Exec=gksudo /usr/bin/start-bluetooth.sh
-GenericName[en_US]=
-GenericName=
-Icon=preferences-system-bluetooth
-MimeType=
-Name[en_US]=Bluetooth
-Name=Bluetooth
-Path=
-StartupNotify=true
-Terminal=false
-TerminalOptions=
-Type=Application
-X-DBUS-ServiceName=
-X-DBUS-StartupType=
-X-KDE-SubstituteUID=false
-X-KDE-Username=
-```
 
 ## Problem with Docker and BTRFS ##
 More than a problem is a caveat. If the main filesystem  for root is BTRFS, docker will use BTRFS storage driver (Docker selects the storage driver automatically depending on the system's configuration when it is installed) to create and manage all the docker images, layers and volumes. It is ok, but there is a problem with snapshots. Because **/var/lib/docker** is created to store all this stuff in a BTRFS subvolume which is into root subvolume, all this data won't be included within the snapshots. In order to allow all this data be part of the snapshots, we will change the storage driver used by Docker. It will be used **devicemapper**. Please, check out [this reference](https://docs.docker.com/engine/userguide/storagedriver/selectadriver/) in order to select the proper storage driver for you. You must know that depending on the filesystem you have for root, some of the storage drivers will not be allowed.
