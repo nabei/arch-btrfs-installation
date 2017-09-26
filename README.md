@@ -237,8 +237,83 @@ This is the [original post](http://unix.stackexchange.com/questions/62802/move-a
 
 有快照后怎么恢复呢？ 看网上说可以利用snapshot和 default subvolume ，我还没有搞明白。
 
+有两种方法，一种是 这样结构的。
+```
+sda3 (Volume)
+|
+|
+- a (Subvolume)   这是个挂到根 
+|   
+|
+- x (Snap)       每次升级前生成一个快照，名字可以 b  c  d  .     btrfs subvolume snapshot /a /b 
+|                                   然后 sudo btrfs subvolume set-default 256 /         是/还是/mnt?
+|                        需要配合fstab 如果挂载时不指定 subvol= 选项便会挂载默认子卷.要改变默认子卷: 不然还得每次改fstab
+|                        麻烦的是每次都要看新生的快照的id
+- t (挂到tmp)
+```
 
 
+还有一种方法是这样结构的。这种我觉得好一点吧
+```
+sda3 (Volume)
+|
+|
+- _active (Subvolume)
+|    |
+|    - rootvol (Subvolume - It will be the current /)
+|   
+|   
+|- _tmp (Subvolume - It will be the current /tmp)
+|
+|
+- _snapshots (Subvolume -  It will contain all the snapshots which are subvolumes too)
+|    |
+|    - 20170920 （sudo btrfs subvolume snapshot -r /_active/rootvol  /_snapshots/20170920
+|    |
+|    - 20170930
+
+要恢复了就是   
+umount /
+# mv /_active/rootvol /_active/rootvol.tmp     #or it could  have been deleted see below
+# mv /snapshots/2015-12-01 /_active/rootvol
+# mount /
+这样好像复杂了一点
+用下面的
+# btrfs subvolume delete /root/btrfs-top-lvl/home
+# btrfs subvolume snapshot /root/btrfs-top-lvl/snapshots/home/2015-01-01 /root/btrfs-top-lvl/home
+
+```
+https://btrfs.wiki.kernel.org/index.php/SysadminGuide
+
+
+
+
+-----
+所以我有点弄明白了，快照的作用就是系统坏了，就算进不去了，也可以用iso盘进去恢复。如果能进系统恢复更容易了。
+
+我想的最终分区情况是这样的
+
+| Mount point | Partition | Partition type      | Bootable flag | Size   |
+|-------------|-----------|---------------------|---------------|--------|
+| /           | /dev/sda1 | Linux (BTRFS)       | yes           | 30 GiB |
+| [SWAP]      | /dev/sda2 | Linux swap          | No            | 9 GiB |
+| /home       | /dev/sda3 | Linux (EXT4)        | No            | 50 GiB|
+
+
+sda1 (Volume)
+- _active (Subvolume)
+|    |
+|    - rootvol (Subvolume - It will be the current /)
+|   
+|   
+|- _tmp (Subvolume - It will be the current /tmp)
+|
+|
+- _snapshots (Subvolume -  It will contain all the snapshots which are subvolumes too)
+|    |
+|    - 20170920 （sudo btrfs subvolume snapshot -r /_active/rootvol  /_snapshots/20170920
+|    |
+|    - 20170930
 
 subvolume不能用rm来删除，只能通过btrfs命令来删除。默认情况下subvolume的快照是可写的
 快照是特殊的subvolume，具有subvolume的属性。所以快照也可以通过mount挂载，也可以通过btrfs property命令设置只读属性
