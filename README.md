@@ -241,6 +241,7 @@ Now, it is necessary to make a read-write snapshot of / into _active/rootvol
 ```
 sudo btrfs subvolume snapshot / /_active/rootvol
 ```
+到这儿是不是应该把/ 下面的文件 rm -rf 啊  rm是没法删除subvol的，安全。
 Modify fstab to reflect the changes (remember to modify / entry and point it to /_active/rootvol. Add /tmp line too). it is interesting to create a new directory within /mnt/defvol in order to mount the entire volume as it is described above too.
 Reboot the system using Archlinux LiveCD or Antergos LiveCD.
 Once the system is booted, mount all the structure within /mnt using as root /_active/rootvol (in my case, / is in /dev/sda1 and /home is in /dev/sdb2):
@@ -249,6 +250,8 @@ mount -o subvol=/_active/rootvol /dev/sda1 /mnt
 mount -o subvol=/_active/tmp /dev/sda1 /mnt/tmp
 mount /dev/sdb2 /mnt/home
 ```
+还有其它的  swap
+其实没必要弄这种两层结构吧，用一层    /root  /tmp /snapshot 就行吧。  两层有什么意义呢
 Chroot the new system:
 ```
 arch-chroot /mnt /bin/bash
@@ -271,5 +274,7 @@ Reboot.
 Once the system is booted, check if / is pointing to /_active/rootvol. if everything is working fine, all the files within the root of the volume can be deleted using rm -rf boot bla bla bla. If systemd created the subvolume /var/lib/machines in the root of the volume, don't delete it and add it to fstab too.
 This is the [original post](http://unix.stackexchange.com/questions/62802/move-a-linux-instalation-using-btrfs-on-the-default-subvolume-subvolid-0-to-an) from I got the inspiration to do this stuff.
 
+
+有快照后怎么恢复呢？ 看网上说可以利用snapshot和 default subvolume ，我还没有搞明白。
 ## Do you want to contact me? ##
 For more information, please check my [portfolio web page at https://egara.github.io](https://egara.github.io)
