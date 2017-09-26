@@ -299,7 +299,7 @@ https://btrfs.wiki.kernel.org/index.php/SysadminGuide
 | [SWAP]      | /dev/sda2 | Linux swap          | No            | 9 GiB |
 | /home       | /dev/sda3 | Linux (EXT4)        | No            | 50 GiB|
 
-
+```
 sda1 (Volume)
 - _active (Subvolume)
 |    |
@@ -314,7 +314,13 @@ sda1 (Volume)
 |    - 20170920 （sudo btrfs subvolume snapshot -r /_active/rootvol  /_snapshots/20170920
 |    |
 |    - 20170930
+```
+弄完后看一下fstab有啥问题没。
 
+
+
+------------
+一些知识
 subvolume不能用rm来删除，只能通过btrfs命令来删除。默认情况下subvolume的快照是可写的
 快照是特殊的subvolume，具有subvolume的属性。所以快照也可以通过mount挂载，也可以通过btrfs property命令设置只读属性
 由于快照的本质就是一个subvolume，所以可以在快照上面再做快照
