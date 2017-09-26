@@ -100,9 +100,16 @@ UUID=04293b56-e2f9-4d3b-aded-6baad666d5bb       none            swap            
 LABEL=arch      /mnt/defvol             btrfs           rw,relatime,compress=lzo,ssd,discard,autodefrag,space_cache     0 0
 
 ```
+最后一行 ，不知道什么意思 /mnt/defvol  是什么？
+
 
 ## Mkinitcpio ##
 In order to enable BTRFS on initramfs image, I added **btrfs** on HOOK inside **/etc/mkinitcpio.conf**. Then, it was necessary to execute **mkinitcpio -p linux** again. If you install linux-lts kernel (Long Term Support), you will have to execute **mkinitcpio -p linux-lts**
+这个加了 btrfs了，有的说不用加， 上次我是加了的，没事儿。
+fsck有人说要改成brtfsck，，后来想了一下不用，改成btrfsck是因为整盘都是btrfs格式的，
+我这是混合的，将来恢复也主要是恢复ext4格式的，所以不改fsck
+
+
 
 ## Bootloader ##
 Because this is a UEFI laptop, [systemd-boot](https://wiki.archlinux.org/index.php/Systemd-boot) was used as a **bootloader**. First, it was necessary to install systemd-boot. /boot partition (/dev/sda1) was previously mounted, so it was only needed to execute **bootctl install**.
@@ -113,6 +120,8 @@ timeout 3
 default arch-btrfs
 editor 0
 ```
+**bootctl install**.  不知道什么意思
+
 
 Then, I installed **intel-ucode** package because I have an Intel CPU as beginners guide says.
 
@@ -276,5 +285,11 @@ This is the [original post](http://unix.stackexchange.com/questions/62802/move-a
 
 
 有快照后怎么恢复呢？ 看网上说可以利用snapshot和 default subvolume ，我还没有搞明白。
-## Do you want to contact me? ##
-For more information, please check my [portfolio web page at https://egara.github.io](https://egara.github.io)
+
+
+
+
+subvolume不能用rm来删除，只能通过btrfs命令来删除。默认情况下subvolume的快照是可写的
+快照是特殊的subvolume，具有subvolume的属性。所以快照也可以通过mount挂载，也可以通过btrfs property命令设置只读属性
+由于快照的本质就是一个subvolume，所以可以在快照上面再做快照
+#在做一个subvolume的快照的时候，不会将它里面的subvolume也做快照https://segmentfault.com/a/1190000008605135
