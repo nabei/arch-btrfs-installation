@@ -201,7 +201,7 @@ Now, it is necessary to make a read-write snapshot of / into _active/rootvol
 ```
 sudo btrfs subvolume snapshot / /_active/rootvol
 ```
-到这儿是不是应该把/ 下面的文件 rm -rf 啊  rm是没法删除subvol的，安全。
+到这儿是不是应该把/ 下面的文件 rm -rf 啊  rm是没法删除subvol的，安全。 实际测试好像是不能删除快照，但能删除快照里的文件？  总而言之，现在不能删除，等到改完后再试。
 Modify fstab to reflect the changes (remember to modify / entry and point it to /_active/rootvol. Add /tmp line too). it is interesting to create a new directory within /mnt/defvol in order to mount the entire volume as it is described above too.
 Reboot the system using Archlinux LiveCD or Antergos LiveCD.
 Once the system is booted, mount all the structure within /mnt using as root /_active/rootvol (in my case, / is in /dev/sda1 and /home is in /dev/sdb2):
@@ -317,7 +317,12 @@ sda1 (Volume)
 ```
 弄完后看一下fstab有啥问题没。
 
-
+ 办公室电脑对bios mbr引导不好，得用 uefi gpt 
+ 
+ boot  efi      /  swap     home
+ ext4  fat32 btrfs swap    ext4
+ 
+ efi放到第二个区，可以不在win系统下显盘符
 
 ------------
 一些知识
