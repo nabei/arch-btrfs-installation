@@ -304,9 +304,9 @@ sda1 (Volume)
 - _active (Subvolume)
 |    |
 |    - rootvol (Subvolume - It will be the current /)
-|   
-|   
-|- _tmp (Subvolume - It will be the current /tmp)
+|    |
+|    |
+|    _tmp (Subvolume - It will be the current /tmp)
 |
 |
 - _snapshots (Subvolume -  It will contain all the snapshots which are subvolumes too)
@@ -317,12 +317,6 @@ sda1 (Volume)
 ```
 弄完后看一下fstab有啥问题没。
 
- 办公室电脑对bios mbr引导不好，得用 uefi gpt 
- 
- boot  efi      /  swap     home
- ext4  fat32 btrfs swap    ext4
- 
- efi放到第二个区，可以不在win系统下显盘符
 
 ------------
 一些知识
