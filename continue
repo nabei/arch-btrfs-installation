@@ -1,0 +1,43 @@
+sudo gedit /etc/locale.gen 
+zh_CN.GBK GBK  
+zh_CN.UTF-8 UTF-8  
+zh_CN GB2312  
+sudo locale-gen
+sudo pacman -S mesa xf86-video-intel xf86-video-ati nvidia xf86-video-amdgpu
+sudo pacman -S wqy-microhei wqy-zenhei wqy-microhei-lite pacaur zsh chrome-gnome-shell proxychains-ng 
+
+sh -c "$(curl -fsSL https://raw.github.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
+
+sudo mkdir /usr/share/fonts/custom
+sudo cp * /usr/share/fonts/custom/
+sudo chmod 644 /usr/share/fonts/custom/*
+sudo fc-cache -vfs
+
+
+sudo pacman -S ibus-rime 
+ibus-setup
+IBus has been started! If you cannot use IBus, please add below lines in $HOME/.bashrc, and relogin your desktop.
+export GTK_IM_MODULE=ibus
+export XMODIFIERS=@im=ibus
+export QT_IM_MODULE=ibus
+restart
+
+
+
+https://extensions.gnome.org/extension/1037/customcorner/
+https://extensions.gnome.org/extension/675/lunar-calendar/
+https://extensions.gnome.org/extension/1064/system-monitor/
+https://extensions.gnome.org/extension/104/netspeed/
+https://extensions.gnome.org/extension/885/dynamic-top-bar/
+https://extensions.gnome.org/extension/1011/dynamic-panel-transparency/
+https://github.com/Tudmotu/gnome-shell-extension-clipboard-indicator
+hide top bar
+
+
+/etc/pacman.conf 文件末尾添加以下两行：
+
+    [archlinuxcn]
+    SigLevel = Optional TrustedOnly
+    Server = http://repo.archlinuxcn.org/$arch
+
+sudo pacman -Sy archlinuxcn-keyring 
